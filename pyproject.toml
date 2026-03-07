@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+  "pre-commit>=4.5.1",
+  "pytest>=9.0.2",
+  "ruff>=0.15.2"
+]
+
+[project]
+name = "face-off"
+version = "0.1.0"
+description = "A Slack bot that highlights daily profile picture changes with voting and commentary"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "slack-bolt==1.27.0",
+  "slack-cli-hooks<1.0.0",
+  "APScheduler>=3.10.0",
+  "pytz>=2024.1",
+  "sqlalchemy>=2.0.0",
+  "alembic>=1.13.0",
+  "psycopg2-binary>=2.9.9"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==9.0.2",
+  "ruff"
+]
+
+[tool.alembic]
+script_location = "%(here)s/alembic"
+file_template = "%%(year)d_%%(month).2d_%%(day).2d_%%(hour).2d%%(minute).2d-%%(rev)s_%%(slug)s"
+prepend_sys_path = [
+  "."
+]
+
+[[tool.alembic.post_write_hooks]]
+executable = "ruff"
+name = "ruff"
+options = "check --fix --unsafe-fixes REVISION_SCRIPT_FILENAME --ignore INP001"
+type = "exec"
+
+[[tool.alembic.post_write_hooks]]
+executable = "ruff"
+name = "ruff_format"
+options = "format REVISION_SCRIPT_FILENAME"
+type = "exec"
+
+[tool.black]
+line-length = 125
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools]
+packages = ["app"]
