@@ -4,14 +4,17 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+from slack_bolt import Ack
+from slack_sdk import WebClient
+
 from ...app import app
 from ...storage import (
+    get_candidate_message_info,
+    get_change_notification_info,
+    get_poll,
+    get_profile_change,
     update_picture_description,
     update_profile_change_description,
-    get_poll,
-    get_candidate_message_info,
-    get_profile_change,
-    get_change_notification_info,
 )
 
 log = logging.getLogger(__name__)
@@ -82,7 +85,9 @@ def _build_notification_blocks(change: Any) -> list[dict[str, Any]]:
 
 
 @app.view("description_modal")
-def description_modal_callback(ack, body, client, view):
+def description_modal_callback(
+    ack: Ack, body: dict[str, Any], client: WebClient, view: dict[str, Any]
+) -> None:
     """Handle description modal submission."""
     # Import here to avoid circular import
     from ...scheduler import build_user_poll_blocks
@@ -137,8 +142,8 @@ def description_modal_callback(ack, body, client, view):
                     text=f"Vote for {_value(user_data, 'display_name')}",
                     blocks=(build_user_poll_blocks(poll_id, user_data)),
                 )
-            except Exception as e:
-                log.error(f"Error updating poll message: {e}")
+            except Exception:
+                log.exception("Error updating poll message")
 
     # Handle profile change context: "change:change_id"
     elif parts[0] == "change" and len(parts) == 2:
@@ -164,8 +169,8 @@ def description_modal_callback(ack, body, client, view):
                     text=f"{_value(change, 'display_name')} changed their profile picture!",
                     blocks=(_build_notification_blocks(change)),
                 )
-            except Exception as e:
-                log.error(f"Error updating notification message: {e}")
+            except Exception:
+                log.exception("Error updating notification message")
 
     else:
         log.error(f"Invalid description modal metadata format: {metadata}")

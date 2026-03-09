@@ -39,11 +39,11 @@ def _resolve_service(service_name: ServiceName, context: Mapping[str, Any]) -> A
 
         client = context.get("client")
         if client is None:
-            raise ValueError(
-                "`notification_service` injection requires a `client` argument."
-            )
+            msg = "`notification_service` injection requires a `client` argument."
+            raise ValueError(msg)
         return NotificationService(client)
-    raise ValueError(f"Unsupported service dependency: {service_name}")
+    msg = f"Unsupported service dependency: {service_name}"
+    raise ValueError(msg)
 
 
 def inject_services(

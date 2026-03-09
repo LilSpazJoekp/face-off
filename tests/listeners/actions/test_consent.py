@@ -22,7 +22,7 @@ class TestConsentAccept:
         mock_ack,
         mock_client,
         sample_user_body,
-    ):
+    ) -> None:
         """Test that accepting consent adds user to watch list."""
         mock_is_pending.return_value = True
         mock_add_user.return_value = True
@@ -40,7 +40,7 @@ class TestConsentAccept:
     @patch("app.listeners.actions.consent.add_watched_user")
     def test_no_pending_consent(
         self, mock_add_user, mock_is_pending, mock_ack, mock_client, sample_user_body
-    ):
+    ) -> None:
         """Test handling when there's no pending consent."""
         mock_is_pending.return_value = False
 
@@ -63,7 +63,7 @@ class TestConsentDecline:
         mock_ack,
         mock_client,
         sample_user_body,
-    ):
+    ) -> None:
         """Test that declining consent removes pending request."""
         mock_build_home.return_value = {"type": "home", "blocks": []}
 

@@ -1,27 +1,29 @@
 """Tests for scheduler module."""
 
-from unittest.mock import patch
+from collections.abc import Callable
+from typing import Any
+from unittest.mock import Mock, patch
 
 import pytest
 
 from app.scheduler import (
-    format_week_label,
     build_user_poll_blocks,
     create_weekly_poll,
+    format_week_label,
 )
 
 
 class TestFormatWeekLabel:
     """Tests for the format_week_label function."""
 
-    def test_valid_week_key(self):
+    def test_valid_week_key(self) -> None:
         """Test formatting a valid week key."""
         result = format_week_label("2024-W01")
         # Should return something like "Jan 01"
         assert result is not None
         assert len(result) > 0
 
-    def test_invalid_week_key(self):
+    def test_invalid_week_key(self) -> None:
         """Test handling of invalid week key."""
         result = format_week_label("invalid")
         assert result == "invalid"
@@ -31,7 +33,11 @@ class TestBuildUserPollBlocks:
     """Tests for the build_user_poll_blocks function."""
 
     @pytest.fixture
-    def user_with_two_pictures(self, make_user_poll_data, make_picture_data):
+    def user_with_two_pictures(
+        self,
+        make_user_poll_data: Callable[..., dict[str, Any]],
+        make_picture_data: Callable[..., dict[str, Any]],
+    ) -> dict[str, Any]:
         """User data with two pictures for poll blocks."""
         pictures = [
             make_picture_data(
@@ -52,7 +58,11 @@ class TestBuildUserPollBlocks:
         return make_user_poll_data(user_id="U123", pictures=pictures)
 
     @pytest.fixture
-    def user_with_one_picture(self, make_user_poll_data, make_picture_data):
+    def user_with_one_picture(
+        self,
+        make_user_poll_data: Callable[..., dict[str, Any]],
+        make_picture_data: Callable[..., dict[str, Any]],
+    ) -> dict[str, Any]:
         """User data with single picture."""
         pictures = [
             make_picture_data(
@@ -69,10 +79,10 @@ class TestBuildUserPollBlocks:
     @patch("app.scheduler.get_picture_vote_count")
     def test_builds_blocks_with_pictures_and_vote_buttons(
         self,
-        mock_get_votes,
-        mock_get_total,
-        user_with_two_pictures,
-    ):
+        mock_get_votes: Mock,
+        mock_get_total: Mock,
+        user_with_two_pictures: dict[str, Any],
+    ) -> None:
         """Test that poll blocks show pictures inline with vote buttons."""
         mock_get_votes.return_value = 5
         mock_get_total.return_value = 10
@@ -109,7 +119,7 @@ class TestBuildUserPollBlocks:
     @patch("app.scheduler.get_picture_vote_count")
     def test_single_picture(
         self, mock_get_votes, mock_get_total, user_with_one_picture
-    ):
+    ) -> None:
         """Test with single picture."""
         mock_get_votes.return_value = 1
         mock_get_total.return_value = 1
@@ -123,7 +133,7 @@ class TestBuildUserPollBlocks:
     @patch("app.scheduler.get_picture_vote_count")
     def test_single_vote_pluralization(
         self, mock_get_votes, mock_get_total, user_with_one_picture
-    ):
+    ) -> None:
         """Test vote count with singular 'vote'."""
         mock_get_votes.return_value = 1
         mock_get_total.return_value = 1
@@ -144,7 +154,7 @@ class TestBuildUserPollBlocks:
 
     @patch("app.scheduler.get_user_total_votes")
     @patch("app.scheduler.get_picture_vote_count")
-    def test_zero_votes(self, mock_get_votes, mock_get_total, user_with_one_picture):
+    def test_zero_votes(self, mock_get_votes, mock_get_total, user_with_one_picture) -> None:
         """Test vote count with zero votes."""
         mock_get_votes.return_value = 0
         mock_get_total.return_value = 0
@@ -253,7 +263,7 @@ class TestCreateWeeklyPoll:
         mock_client,
         poll_changes_data,
         poll_data_after_creation,
-    ):
+    ) -> None:
         """Test that a poll is created with correct messages."""
         mock_get_channel.return_value = "C123"
         mock_get_duration.return_value = 24
@@ -283,7 +293,7 @@ class TestCreateWeeklyPoll:
         assert "3" in votes_text  # max votes
 
     @patch("app.scheduler.get_notification_channel")
-    def test_skips_when_no_channel(self, mock_get_channel, mock_client):
+    def test_skips_when_no_channel(self, mock_get_channel, mock_client) -> None:
         """Test that poll is skipped when no channel is configured."""
         mock_get_channel.return_value = None
 
@@ -295,7 +305,7 @@ class TestCreateWeeklyPoll:
     @patch("app.scheduler.get_changes_by_user")
     def test_skips_when_no_changes(
         self, mock_get_changes, mock_get_channel, mock_client
-    ):
+    ) -> None:
         """Test that poll is skipped when there are no changes."""
         mock_get_channel.return_value = "C123"
         mock_get_changes.return_value = {}
@@ -308,7 +318,7 @@ class TestCreateWeeklyPoll:
     @patch("app.scheduler.get_changes_by_user")
     def test_skips_when_changes_none(
         self, mock_get_changes, mock_get_channel, mock_client
-    ):
+    ) -> None:
         """Test that poll is skipped when changes is None."""
         mock_get_channel.return_value = "C123"
         mock_get_changes.return_value = None

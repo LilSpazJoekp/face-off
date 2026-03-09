@@ -1,8 +1,8 @@
 """Service for sending Slack notifications."""
 
 import logging
-from typing import Optional
 
+from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 log = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 class NotificationService:
     """Service for sending Slack notifications and managing messages."""
 
-    def __init__(self, client):
+    def __init__(self, client: WebClient) -> None:
         """Initialize the notification service.
 
         :param client: The Slack client instance.
@@ -29,18 +29,19 @@ class NotificationService:
         """
         try:
             self.client.conversations_join(channel=channel_id)
-            return True
-        except SlackApiError as e:
-            log.error(f"Failed to join channel {channel_id}: {e}")
+        except SlackApiError:
+            log.exception(f"Failed to join channel {channel_id}")
             return False
+        else:
+            return True
 
     def post_message(
         self,
         channel: str,
         text: str,
-        blocks: Optional[list] = None,
-        metadata: Optional[dict] = None,
-    ) -> Optional[dict]:
+        blocks: list | None = None,
+        metadata: dict | None = None,
+    ) -> dict | None:
         """Post a message to a channel.
 
         :param channel: The channel ID to post to.
@@ -63,8 +64,8 @@ class NotificationService:
 
             result = self.client.chat_postMessage(**kwargs)
             return {"ts": result["ts"], "channel": result["channel"]}
-        except SlackApiError as e:
-            log.error(f"Failed to post message to {channel}: {e}")
+        except SlackApiError:
+            log.exception(f"Failed to post message to {channel}")
             return None
 
     def update_message(
@@ -72,7 +73,7 @@ class NotificationService:
         channel: str,
         ts: str,
         text: str,
-        blocks: Optional[list] = None,
+        blocks: list | None = None,
     ) -> bool:
         """Update an existing message.
 
@@ -94,17 +95,18 @@ class NotificationService:
                 kwargs["blocks"] = blocks
 
             self.client.chat_update(**kwargs)
-            return True
-        except SlackApiError as e:
-            log.error(f"Failed to update message in {channel}: {e}")
+        except SlackApiError:
+            log.exception(f"Failed to update message in {channel}")
             return False
+        else:
+            return True
 
     def post_ephemeral(
         self,
         channel: str,
         user: str,
         text: str,
-        blocks: Optional[list] = None,
+        blocks: list | None = None,
     ) -> bool:
         """Post an ephemeral message visible only to one user.
 
@@ -126,10 +128,11 @@ class NotificationService:
                 kwargs["blocks"] = blocks
 
             self.client.chat_postEphemeral(**kwargs)
-            return True
-        except SlackApiError as e:
-            log.error(f"Failed to post ephemeral to {user} in {channel}: {e}")
+        except SlackApiError:
+            log.exception(f"Failed to post ephemeral to {user} in {channel}")
             return False
+        else:
+            return True
 
     def open_view(self, trigger_id: str, view: dict) -> bool:
         """Open a modal view.
@@ -142,10 +145,11 @@ class NotificationService:
         """
         try:
             self.client.views_open(trigger_id=trigger_id, view=view)
-            return True
-        except SlackApiError as e:
-            log.error(f"Failed to open view: {e}")
+        except SlackApiError:
+            log.exception("Failed to open view")
             return False
+        else:
+            return True
 
     def update_view(self, view_id: str, view: dict) -> bool:
         """Update an existing modal view.
@@ -158,10 +162,11 @@ class NotificationService:
         """
         try:
             self.client.views_update(view_id=view_id, view=view)
-            return True
-        except SlackApiError as e:
-            log.error(f"Failed to update view {view_id}: {e}")
+        except SlackApiError:
+            log.exception(f"Failed to update view {view_id}")
             return False
+        else:
+            return True
 
     def publish_home_tab(self, user_id: str, view: dict) -> bool:
         """Publish the app home tab for a user.
@@ -174,17 +179,18 @@ class NotificationService:
         """
         try:
             self.client.views_publish(user_id=user_id, view=view)
-            return True
-        except SlackApiError as e:
-            log.error(f"Failed to publish home tab for {user_id}: {e}")
+        except SlackApiError:
+            log.exception(f"Failed to publish home tab for {user_id}")
             return False
+        else:
+            return True
 
     def send_direct_message(
         self,
         user_id: str,
         text: str,
-        blocks: Optional[list] = None,
-    ) -> Optional[dict]:
+        blocks: list | None = None,
+    ) -> dict | None:
         """Send a direct message to a user.
 
         :param user_id: The user ID to message.
@@ -200,6 +206,6 @@ class NotificationService:
             channel_id = response["channel"]["id"]
 
             return self.post_message(channel_id, text, blocks)
-        except SlackApiError as e:
-            log.error(f"Failed to send DM to {user_id}: {e}")
+        except SlackApiError:
+            log.exception(f"Failed to send DM to {user_id}")
             return None

@@ -4,6 +4,9 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+from slack_bolt import Ack
+from slack_sdk import WebClient
+
 from ...app import app
 from ...storage import get_picture, get_profile_change
 
@@ -18,7 +21,9 @@ def _value(record: Any, key: str) -> Any:
 
 
 @app.action("edit_description")
-def edit_description_callback(ack, body, client):
+def edit_description_callback(
+    ack: Ack, body: dict[str, Any], client: WebClient
+) -> None:
     """Open modal to edit picture description (poll context)."""
     ack()
 
@@ -27,11 +32,12 @@ def edit_description_callback(ack, body, client):
     try:
         parts = value.split(":")
         if len(parts) != 2:
-            raise ValueError("Expected 2 parts")
+            msg = "Expected 2 parts"
+            raise ValueError(msg)
         poll_id, picture_id_str = parts
         picture_id = int(picture_id_str)
-    except (ValueError, TypeError) as e:
-        log.error(f"Invalid edit_description value format: {value} - {e}")
+    except (ValueError, TypeError):
+        log.exception(f"Invalid edit_description value format: {value} ")
         return
 
     picture = get_picture(picture_id)
@@ -84,7 +90,9 @@ def edit_description_callback(ack, body, client):
 
 
 @app.action("edit_change_description")
-def edit_change_description_callback(ack, body, client):
+def edit_change_description_callback(
+    ack: Ack, body: dict[str, Any], client: WebClient
+) -> None:
     """Open modal to edit profile change description (pre-poll context)."""
     ack()
 

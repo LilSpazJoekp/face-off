@@ -1,7 +1,5 @@
 """Service for managing application settings."""
 
-from typing import Optional
-
 from ..database import get_db
 from ..models import Setting
 
@@ -10,7 +8,7 @@ class SettingsService:
     """Service for managing application settings."""
 
     @staticmethod
-    def get_setting(key: str, default: Optional[str] = None) -> Optional[str]:
+    def get_setting(key: str, default: str | None = None) -> str | None:
         """Get a setting value by key.
 
         :param key: The setting key.
@@ -41,7 +39,7 @@ class SettingsService:
                 db.add(setting)
 
     @staticmethod
-    def get_notification_channel() -> Optional[str]:
+    def get_notification_channel() -> str | None:
         """Get the configured notification channel ID.
 
         :returns: The Slack channel ID, or None if not configured.

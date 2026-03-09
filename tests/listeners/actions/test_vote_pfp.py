@@ -33,7 +33,7 @@ class TestVotePfpCallback:
         mock_client,
         vote_body,
         sample_poll,
-    ):
+    ) -> None:
         """Test a successful vote for a picture."""
         mock_get_poll.return_value = sample_poll
         mock_has_voted.return_value = False
@@ -67,7 +67,7 @@ class TestVotePfpCallback:
         mock_client,
         vote_body,
         sample_poll,
-    ):
+    ) -> None:
         """Test removing a vote (toggle off)."""
         mock_get_poll.return_value = sample_poll
         mock_has_voted.return_value = True  # Already voted
@@ -83,7 +83,7 @@ class TestVotePfpCallback:
         mock_client.chat_postEphemeral.assert_called_once()
 
     @patch("app.listeners.actions.vote_pfp.get_poll")
-    def test_poll_not_found(self, mock_get_poll, mock_ack, mock_client, vote_body):
+    def test_poll_not_found(self, mock_get_poll, mock_ack, mock_client, vote_body) -> None:
         """Test handling when poll doesn't exist."""
         mock_get_poll.return_value = None
 
@@ -92,7 +92,7 @@ class TestVotePfpCallback:
         mock_ack.assert_called_once()
         mock_client.chat_update.assert_not_called()
 
-    def test_invalid_value_format(self, mock_ack, mock_client, make_slack_action_body):
+    def test_invalid_value_format(self, mock_ack, mock_client, make_slack_action_body) -> None:
         """Test handling of invalid action value format."""
         body = make_slack_action_body(action_value="invalid_format")
 
@@ -121,7 +121,7 @@ class TestVotePfpCallback:
         mock_client,
         vote_body,
         sample_poll,
-    ):
+    ) -> None:
         """Test that voting fails when at max votes."""
         mock_get_poll.return_value = sample_poll
         mock_has_voted.return_value = False

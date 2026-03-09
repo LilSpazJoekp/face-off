@@ -1,12 +1,13 @@
 """Command to manually trigger the weekly poll."""
 
 from slack_bolt import Ack, Respond
+from slack_sdk import WebClient
 
 from ...app import app
 
 
 @app.command("/trigger-poll")
-def trigger_poll_callback(ack: Ack, respond: Respond, client) -> None:
+def trigger_poll_callback(ack: Ack, respond: Respond, client: WebClient) -> None:
     """Manually trigger the weekly poll."""
     from ...scheduler import create_weekly_poll
 

@@ -4,16 +4,19 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+from slack_bolt import Ack
+from slack_sdk import WebClient
+
 from ...app import app
-from ..utils import plural
 from ...storage import (
+    get_max_votes,
+    get_poll,
+    get_voter_remaining_votes,
+    has_voted_for_picture,
     record_vote,
     remove_vote,
-    get_poll,
-    get_max_votes,
-    has_voted_for_picture,
-    get_voter_remaining_votes,
 )
+from ..utils import plural
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +29,7 @@ def _value(record: Any, key: str) -> Any:
 
 
 @app.action("vote_pfp")
-def vote_pfp_callback(ack, body, client):
+def vote_pfp_callback(ack: Ack, body: dict[str, Any], client: WebClient) -> None:
     """Handle a vote button click from a channel message."""
     ack()
 
@@ -36,11 +39,12 @@ def vote_pfp_callback(ack, body, client):
     try:
         parts = value.split(":")
         if len(parts) != 3:
-            raise ValueError("Expected 3 parts")
+            msg = "Expected 3 parts"
+            raise ValueError(msg)
         poll_id, picture_id_str, user_id = parts
         picture_id = int(picture_id_str)
-    except (ValueError, TypeError) as e:
-        log.error(f"Invalid vote value format: {value} - {e}")
+    except (ValueError, TypeError):
+        log.exception(f"Invalid vote value format: {value} ")
         return
 
     voter_id = body["user"]["id"]
@@ -63,10 +67,7 @@ def vote_pfp_callback(ack, body, client):
     else:
         # Try to add vote (may fail if at max)
         success = record_vote(poll_id, voter_id, picture_id)
-        if success:
-            action_taken = "added"
-        else:
-            action_taken = "failed"
+        action_taken = "added" if success else "failed"
 
     # Get updated poll data and rebuild message blocks
     poll = get_poll(poll_id)
@@ -118,5 +119,5 @@ def vote_pfp_callback(ack, body, client):
         # Update the summary leaderboard
         update_poll_summary(client, poll_id)
 
-    except Exception as e:
-        log.error(f"Error updating poll message: {e}")
+    except Exception:
+        log.exception("Error updating poll message")

@@ -7,8 +7,8 @@ from typing import TypedDict
 import pytz
 from sqlalchemy.orm import selectinload
 
-from ..dependencies import inject_services
 from ..database import get_db
+from ..dependencies import inject_services
 from ..models import Poll, PollCandidate, PollCandidatePicture, ProfileChange, Vote
 from .profile_change_service import ProfileChangeService
 from .settings_service import SettingsService
@@ -123,7 +123,8 @@ class PollService:
 
         created_poll = PollService.get_poll(poll_id)
         if created_poll is None:
-            raise RuntimeError(f"Poll {poll_id} was not persisted")
+            msg = f"Poll {poll_id} was not persisted"
+            raise RuntimeError(msg)
         return created_poll
 
     @staticmethod

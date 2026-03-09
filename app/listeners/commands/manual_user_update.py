@@ -2,8 +2,10 @@
 
 import logging
 import re
+from typing import Any
 
 from slack_bolt import Ack, Respond
+from slack_sdk import WebClient
 
 from ...app import app
 from ...services.profile_change_service import ProfileChangeService
@@ -12,7 +14,9 @@ log = logging.getLogger(__name__)
 
 
 @app.command("/manual-user-update")
-def manual_user_update_callback(ack: Ack, respond: Respond, command, client) -> None:
+def manual_user_update_callback(
+    ack: Ack, respond: Respond, command: dict[str, Any], client: WebClient
+) -> None:
     """Manually trigger a profile picture update for a user."""
     ack()
 
@@ -64,5 +68,5 @@ def manual_user_update_callback(ack: Ack, respond: Respond, command, client) -> 
             )
 
     except Exception as e:
-        log.error(f"Error in manual_user_update: {e}")
+        log.exception("Error in manual_user_update")
         respond(f"An error occurred while processing the update: {e}")

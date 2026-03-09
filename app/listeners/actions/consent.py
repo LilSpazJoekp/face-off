@@ -1,12 +1,16 @@
 """Actions for handling consent requests from the app home."""
 
 import logging
+from typing import Any
+
+from slack_bolt import Ack
+from slack_sdk import WebClient
 
 from ...app import app
 from ...storage import (
     add_watched_user,
-    remove_pending_consent,
     is_consent_pending,
+    remove_pending_consent,
 )
 from ..events.app_home_opened import build_home_view
 
@@ -14,7 +18,7 @@ log = logging.getLogger(__name__)
 
 
 @app.action("consent_accept")
-def consent_accept_callback(ack, body, client):
+def consent_accept_callback(ack: Ack, body: dict[str, Any], client: WebClient) -> None:
     """Handle user accepting the consent request from the home tab."""
     ack()
 
@@ -37,7 +41,7 @@ def consent_accept_callback(ack, body, client):
 
 
 @app.action("consent_decline")
-def consent_decline_callback(ack, body, client):
+def consent_decline_callback(ack: Ack, body: dict[str, Any], client: WebClient) -> None:
     """Handle user declining the consent request from the home tab."""
     ack()
 

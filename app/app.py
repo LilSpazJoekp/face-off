@@ -1,6 +1,8 @@
-import os
 import logging
+import os
 import sys
+from collections.abc import Callable
+from typing import Any
 
 from slack_bolt import App
 
@@ -33,6 +35,6 @@ app = App(
 
 # Middleware to inject scheduler into context
 @app.middleware
-def inject_scheduler(context, next):
+def inject_scheduler(context: dict[str, Any], next_: Callable[[], None]) -> None:
     context["scheduler"] = getattr(app, "scheduler", None)
-    next()
+    next_()

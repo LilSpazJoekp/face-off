@@ -6,8 +6,8 @@ import pytest
 
 from app.listeners.actions.watchlist import (
     open_add_user_modal_callback,
-    remove_watched_user_callback,
     remove_self_from_watchlist_callback,
+    remove_watched_user_callback,
 )
 
 
@@ -19,7 +19,7 @@ class TestOpenAddUserModal:
         """Body with trigger_id for modal tests."""
         return make_slack_user_body(trigger_id="trigger_123")
 
-    def test_opens_modal(self, mock_ack, mock_client, trigger_body):
+    def test_opens_modal(self, mock_ack, mock_client, trigger_body) -> None:
         """Test that the add user modal is opened."""
         open_add_user_modal_callback(
             ack=mock_ack, body=trigger_body, client=mock_client
@@ -51,7 +51,7 @@ class TestRemoveWatchedUser:
         mock_ack,
         mock_client,
         remove_user_body,
-    ):
+    ) -> None:
         """Test that a user is removed and home view refreshed."""
         mock_remove.return_value = True
         mock_build_home.return_value = {"type": "home", "blocks": []}
@@ -69,7 +69,7 @@ class TestRemoveWatchedUser:
     @patch("app.listeners.actions.watchlist.build_home_view")
     def test_user_not_found(
         self, mock_build_home, mock_remove, mock_ack, mock_client, remove_user_body
-    ):
+    ) -> None:
         """Test handling when user is not in watch list."""
         mock_remove.return_value = False
         mock_build_home.return_value = {"type": "home", "blocks": []}
@@ -95,7 +95,7 @@ class TestRemoveSelfFromWatchlist:
         mock_ack,
         mock_client,
         sample_user_body,
-    ):
+    ) -> None:
         """Test that a user can remove themselves."""
         mock_remove.return_value = True
         mock_build_home.return_value = {"type": "home", "blocks": []}

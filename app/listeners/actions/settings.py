@@ -1,20 +1,26 @@
 """Actions for app settings."""
 
 import logging
+from typing import Any
+
+from slack_bolt import Ack
+from slack_sdk import WebClient
 
 from ...app import app
 from ...storage import (
     get_notification_channel,
     get_poll_day,
-    get_poll_hour,
     get_poll_duration_hours,
+    get_poll_hour,
 )
 
 log = logging.getLogger(__name__)
 
 
 @app.action("open_channel_modal")
-def open_channel_modal_callback(ack, body, client):
+def open_channel_modal_callback(
+    ack: Ack, body: dict[str, Any], client: WebClient
+) -> None:
     """Open the modal to select a notification channel."""
     ack()
 
@@ -60,7 +66,9 @@ def open_channel_modal_callback(ack, body, client):
 
 
 @app.action("open_poll_schedule_modal")
-def open_poll_schedule_modal_callback(ack, body, client):
+def open_poll_schedule_modal_callback(
+    ack: Ack, body: dict[str, Any], client: WebClient
+) -> None:
     """Open the modal to configure poll schedule."""
     ack()
 

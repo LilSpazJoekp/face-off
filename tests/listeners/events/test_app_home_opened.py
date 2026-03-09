@@ -54,7 +54,7 @@ class TestAppHomeOpened:
 
     def test_app_home_opened_callback(
         self, mock_client, home_event, mock_app_home_dependencies
-    ):
+    ) -> None:
         """Test that app home view is published correctly."""
         app_home_opened_callback(client=mock_client, event=home_event)
 
@@ -63,7 +63,7 @@ class TestAppHomeOpened:
         assert kwargs["user_id"] == home_event["user"]
         assert kwargs["view"] is not None
 
-    def test_event_tab_not_home(self, mock_client, make_app_home_event):
+    def test_event_tab_not_home(self, mock_client, make_app_home_event) -> None:
         """Test that non-home tab events are ignored."""
         event = make_app_home_event(tab="about")
 
@@ -73,7 +73,7 @@ class TestAppHomeOpened:
 
     def test_views_publish_exception(
         self, mock_client, home_event, mock_app_home_dependencies
-    ):
+    ) -> None:
         """Test that exception in views_publish is handled gracefully."""
         mock_client.views_publish.side_effect = Exception("test exception")
 

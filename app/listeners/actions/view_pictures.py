@@ -4,14 +4,17 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+from slack_bolt import Ack
+from slack_sdk import WebClient
+
 from ...app import app
-from ..utils import plural
 from ...storage import (
-    get_poll,
-    get_voter_votes,
     get_max_votes,
     get_picture_vote_count,
+    get_poll,
+    get_voter_votes,
 )
+from ..utils import plural
 
 log = logging.getLogger(__name__)
 
@@ -146,7 +149,7 @@ def build_pictures_modal(
 
 
 @app.action("view_user_pictures")
-def view_pictures_callback(ack, body, client):
+def view_pictures_callback(ack: Ack, body: dict[str, Any], client: WebClient) -> None:
     """Open modal showing user's pictures with vote buttons."""
     ack()
 

@@ -1,6 +1,6 @@
 """Tests for trigger_poll command handler."""
 
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from app.listeners.commands.trigger_poll import trigger_poll_callback
 
@@ -10,8 +10,12 @@ class TestTriggerPollCommand:
 
     @patch("app.scheduler.create_weekly_poll")
     def test_triggers_poll_successfully(
-        self, mock_create_poll, mock_ack, mock_respond, mock_client
-    ):
+        self,
+        mock_create_poll: Mock,
+        mock_ack: Mock,
+        mock_respond: Mock,
+        mock_client: Mock,
+    ) -> None:
         """Test that the poll is triggered and response sent."""
         trigger_poll_callback(ack=mock_ack, respond=mock_respond, client=mock_client)
 

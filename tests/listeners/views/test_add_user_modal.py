@@ -22,7 +22,7 @@ class TestAddUserModalCallback:
         mock_client,
         sample_user_body,
         user_select_view,
-    ):
+    ) -> None:
         """Test that pending consent is added for new user."""
         mock_is_watched.return_value = False
         mock_is_pending.return_value = False
@@ -49,7 +49,7 @@ class TestAddUserModalCallback:
         mock_client,
         sample_user_body,
         user_select_view,
-    ):
+    ) -> None:
         """Test error is returned when user is already watched."""
         mock_is_watched.return_value = True
 
@@ -76,7 +76,7 @@ class TestAddUserModalCallback:
         mock_client,
         sample_user_body,
         user_select_view,
-    ):
+    ) -> None:
         """Test error is returned when consent is already pending."""
         mock_is_watched.return_value = False
         mock_is_pending.return_value = True

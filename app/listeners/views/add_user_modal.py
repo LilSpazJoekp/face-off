@@ -1,12 +1,16 @@
 """View handler for the add user modal submission."""
 
 import logging
+from typing import Any
+
+from slack_bolt import Ack
+from slack_sdk import WebClient
 
 from ...app import app
 from ...storage import (
-    is_user_watched,
-    is_consent_pending,
     add_pending_consent,
+    is_consent_pending,
+    is_user_watched,
 )
 from ..events.app_home_opened import build_home_view
 
@@ -14,7 +18,9 @@ log = logging.getLogger(__name__)
 
 
 @app.view("add_user_modal_submit")
-def add_user_modal_callback(ack, body, client, view):
+def add_user_modal_callback(
+    ack: Ack, body: dict[str, Any], client: WebClient, view: dict[str, Any]
+) -> None:
     """Handle the add user modal submission."""
     requesting_user = body["user"]["id"]
 

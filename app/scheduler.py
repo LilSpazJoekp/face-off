@@ -6,28 +6,30 @@ from collections.abc import Mapping
 from datetime import datetime, timedelta
 from typing import Any
 
+import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-import pytz
+from slack_bolt import App
+from slack_sdk import WebClient
 
 from .listeners import plural
 from .models import PollCandidate
 from .storage import (
-    get_changes_by_user,
     create_poll,
-    get_poll,
-    get_user_total_votes,
-    get_picture_vote_count,
-    get_notification_channel,
-    get_max_votes,
+    end_poll,
+    get_active_polls_with_end_time,
     get_all_pictures_with_votes,
+    get_changes_by_user,
+    get_max_votes,
+    get_notification_channel,
+    get_picture_vote_count,
+    get_poll,
+    get_poll_day,
+    get_poll_duration_hours,
+    get_poll_hour,
+    get_user_total_votes,
     save_poll_message_ts,
     save_poll_summary_ts,
-    get_poll_day,
-    get_poll_hour,
-    get_poll_duration_hours,
-    get_active_polls_with_end_time,
-    end_poll,
 )
 
 log = logging.getLogger(__name__)
@@ -332,7 +334,7 @@ def build_summary_blocks(
     return blocks
 
 
-def update_poll_summary(client: Any, poll_id: str) -> None:
+def update_poll_summary(client: WebClient, poll_id: str) -> None:
     """Update the summary message with current leaderboard."""
     poll = get_poll(poll_id)
     if not poll:
@@ -358,11 +360,13 @@ def update_poll_summary(client: Any, poll_id: str) -> None:
             text="Poll Summary",
             blocks=blocks,
         )
-    except Exception as e:
-        log.error("Error updating poll summary: %s", e)
+    except Exception:
+        log.exception("Error updating poll summary")
 
 
-def update_poll_user_messages(client: Any, poll_id: str, ended: bool = False) -> None:
+def update_poll_user_messages(
+    client: WebClient, poll_id: str, ended: bool = False
+) -> None:
     """Update all user poll messages (e.g., when poll ends to remove vote buttons)."""
     poll = get_poll(poll_id)
     if not poll:
@@ -382,8 +386,8 @@ def update_poll_user_messages(client: Any, poll_id: str, ended: bool = False) ->
                     text=f"Vote for {user_data['display_name']}",
                     blocks=blocks,
                 )
-            except Exception as e:
-                log.error("Error updating poll message for %s: %s", user_id, e)
+            except Exception:
+                log.exception("Error updating poll message for %s", user_id)
         return
 
     for candidate in poll.candidates:
@@ -398,12 +402,12 @@ def update_poll_user_messages(client: Any, poll_id: str, ended: bool = False) ->
                 text=f"Vote for {candidate.display_name}",
                 blocks=blocks,
             )
-        except Exception as e:
-            log.error("Error updating poll message for %s: %s", candidate.user_id, e)
+        except Exception:
+            log.exception("Error updating poll message for %s", candidate.user_id)
 
 
 def create_weekly_poll(
-    client: Any,
+    client: WebClient,
     manual: bool = False,
     scheduler: BackgroundScheduler | None = None,
     current_week: bool = False,
@@ -559,10 +563,11 @@ def create_weekly_poll(
         save_poll_summary_ts(poll_id, notification_channel, summary_result["ts"])
 
         log.info("Poll created with %d user(s), ID: %s", total_users, poll_id)
-        return True
-    except Exception as e:
-        log.error("Error creating poll: %s", e)
+    except Exception:
+        log.exception("Error creating poll")
         return False
+    else:
+        return True
 
 
 DAY_NAMES = {
@@ -576,7 +581,7 @@ DAY_NAMES = {
 }
 
 
-def end_poll_job(client: Any, poll_id: str) -> None:
+def end_poll_job(client: WebClient, poll_id: str) -> None:
     """End a poll and update all messages. Called by scheduler."""
     log.info("Auto-ending poll %s", poll_id)
 
@@ -606,13 +611,13 @@ def end_poll_job(client: Any, poll_id: str) -> None:
                 text="Poll Results (Ended)",
                 blocks=blocks,
             )
-        except Exception as e:
-            log.error("Error updating poll summary after auto-end: %s", e)
+        except Exception:
+            log.exception("Error updating poll summary after auto-end")
 
 
 def schedule_poll_end(
     scheduler: BackgroundScheduler,
-    client: Any,
+    client: WebClient,
     poll_id: str,
     ends_at: datetime,
 ) -> None:
@@ -641,7 +646,7 @@ def schedule_poll_end(
     log.info("Scheduled poll %s to end at %s", poll_id, ends_at)
 
 
-def start_scheduler(app: Any) -> BackgroundScheduler:
+def start_scheduler(app: App) -> BackgroundScheduler:
     """Set up and start the scheduler for the weekly poll."""
     scheduler = BackgroundScheduler(timezone=CT_TIMEZONE)
 
@@ -656,7 +661,7 @@ def start_scheduler(app: Any) -> BackgroundScheduler:
         timezone=CT_TIMEZONE,
     )
 
-    def poll_job():
+    def poll_job() -> None:
         create_weekly_poll(app.client, scheduler=scheduler)
 
     scheduler.add_job(poll_job, trigger, id="weekly_poll")

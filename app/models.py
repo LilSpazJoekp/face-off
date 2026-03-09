@@ -1,14 +1,13 @@
 """SQLAlchemy models for the profile picture tracker."""
 
 from datetime import datetime
-from typing import List, Optional
 
 from sqlalchemy import (
-    String,
     DateTime,
     ForeignKey,
-    UniqueConstraint,
     Index,
+    String,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -29,20 +28,16 @@ class ProfileChange(Base):
     display_name: Mapped[str] = mapped_column(String(255))
     avatar_url: Mapped[str] = mapped_column(String(2048))
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
-    ended_at: Mapped[Optional[datetime]] = mapped_column(
+    ended_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    description_edited_by: Mapped[Optional[str]] = mapped_column(
-        String(32), nullable=True
-    )
-    description_edited_at: Mapped[Optional[datetime]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    description_edited_by: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    description_edited_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    notification_channel: Mapped[Optional[str]] = mapped_column(
-        String(32), nullable=True
-    )
-    notification_ts: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    notification_channel: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    notification_ts: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
 
 class Poll(Base):
@@ -52,21 +47,21 @@ class Poll(Base):
 
     poll_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    ends_at: Mapped[Optional[datetime]] = mapped_column(
+    ends_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    ended: Mapped[Optional[str]] = mapped_column(
+    ended: Mapped[str | None] = mapped_column(
         String(1), nullable=True
     )  # 'Y' if ended, NULL if active
-    summary_message_ts: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
-    summary_message_channel: Mapped[Optional[str]] = mapped_column(
+    summary_message_ts: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    summary_message_channel: Mapped[str | None] = mapped_column(
         String(32), nullable=True
     )
 
-    candidates: Mapped[List["PollCandidate"]] = relationship(
+    candidates: Mapped[list["PollCandidate"]] = relationship(
         back_populates="poll", cascade="all, delete-orphan"
     )
-    votes: Mapped[List["Vote"]] = relationship(
+    votes: Mapped[list["Vote"]] = relationship(
         back_populates="poll", cascade="all, delete-orphan"
     )
 
@@ -82,8 +77,8 @@ class PollCandidate(Base):
     )
     user_id: Mapped[str] = mapped_column(String(32))
     display_name: Mapped[str] = mapped_column(String(255))
-    message_ts: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
-    message_channel: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    message_ts: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    message_channel: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("poll_id", "user_id", name="uq_poll_candidate"),
@@ -91,7 +86,7 @@ class PollCandidate(Base):
     )
 
     poll: Mapped["Poll"] = relationship(back_populates="candidates")
-    pictures: Mapped[List["PollCandidatePicture"]] = relationship(
+    pictures: Mapped[list["PollCandidatePicture"]] = relationship(
         back_populates="candidate", cascade="all, delete-orphan"
     )
 
@@ -109,11 +104,9 @@ class PollCandidatePicture(Base):
     duration: Mapped[str] = mapped_column(String(32))
     week: Mapped[str] = mapped_column(String(16))
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    description_edited_by: Mapped[Optional[str]] = mapped_column(
-        String(32), nullable=True
-    )
-    description_edited_at: Mapped[Optional[datetime]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    description_edited_by: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    description_edited_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 
@@ -122,7 +115,7 @@ class PollCandidatePicture(Base):
     )
 
     candidate: Mapped["PollCandidate"] = relationship(back_populates="pictures")
-    votes: Mapped[List["Vote"]] = relationship(
+    votes: Mapped[list["Vote"]] = relationship(
         back_populates="picture", cascade="all, delete-orphan"
     )
 

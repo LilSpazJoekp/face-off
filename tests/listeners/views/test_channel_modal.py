@@ -18,7 +18,7 @@ class TestChannelModalCallback:
         mock_client,
         sample_user_body,
         channel_select_view,
-    ):
+    ) -> None:
         """Test that notification channel is set."""
         mock_build_home.return_value = {"type": "home", "blocks": []}
 
@@ -45,7 +45,7 @@ class TestChannelModalCallback:
         mock_client,
         sample_user_body,
         channel_select_view,
-    ):
+    ) -> None:
         """Test that channel join failure is handled gracefully."""
         mock_client.conversations_join.side_effect = Exception("Already in channel")
         mock_build_home.return_value = {"type": "home", "blocks": []}

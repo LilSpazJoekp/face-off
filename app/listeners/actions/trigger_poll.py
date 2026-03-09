@@ -1,8 +1,10 @@
 """Handler for trigger poll action."""
 
 import logging
+from typing import Any
 
 from slack_bolt import Ack, Respond
+from slack_sdk import WebClient
 
 from ...app import app
 
@@ -10,7 +12,9 @@ log = logging.getLogger(__name__)
 
 
 @app.action("trigger_poll_select")
-def trigger_poll_callback(ack: Ack, respond: Respond, client, body: dict):
+def trigger_poll_callback(
+    ack: Ack, respond: Respond, client: WebClient, body: dict[str, Any]
+) -> None:
     """Trigger poll for selected week."""
     # Import here to avoid circular import
     from ...scheduler import create_weekly_poll

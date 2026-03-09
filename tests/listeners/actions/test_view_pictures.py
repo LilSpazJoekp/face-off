@@ -5,8 +5,8 @@ from unittest.mock import patch
 import pytest
 
 from app.listeners.actions.view_pictures import (
-    view_pictures_callback,
     build_pictures_modal,
+    view_pictures_callback,
 )
 
 
@@ -34,7 +34,7 @@ class TestViewPicturesCallback:
         mock_client,
         view_pictures_body,
         sample_poll,
-    ):
+    ) -> None:
         """Test that the pictures modal is opened."""
         mock_get_poll.return_value = sample_poll
         mock_get_votes.return_value = []
@@ -55,7 +55,7 @@ class TestViewPicturesCallback:
     @patch("app.listeners.actions.view_pictures.get_poll")
     def test_poll_not_found(
         self, mock_get_poll, mock_ack, mock_client, view_pictures_body
-    ):
+    ) -> None:
         """Test handling when poll doesn't exist."""
         mock_get_poll.return_value = None
 
@@ -66,7 +66,7 @@ class TestViewPicturesCallback:
         mock_ack.assert_called_once()
         mock_client.views_open.assert_not_called()
 
-    def test_invalid_value_format(self, mock_ack, mock_client, make_slack_action_body):
+    def test_invalid_value_format(self, mock_ack, mock_client, make_slack_action_body) -> None:
         """Test handling of invalid action value format."""
         body = make_slack_action_body(action_value="invalid", trigger_id="trigger_123")
 
@@ -100,7 +100,7 @@ class TestBuildPicturesModal:
         return make_poll(users={"U456": user_data})
 
     @patch("app.listeners.actions.view_pictures.get_picture_vote_count")
-    def test_builds_modal_with_pictures(self, mock_vote_count, poll_with_pictures):
+    def test_builds_modal_with_pictures(self, mock_vote_count, poll_with_pictures) -> None:
         """Test that modal is built with pictures and vote buttons."""
         mock_vote_count.return_value = 2
 
@@ -121,7 +121,7 @@ class TestBuildPicturesModal:
         assert "3" in first_block["text"]["text"]  # of 3 max
 
     @patch("app.listeners.actions.view_pictures.get_picture_vote_count")
-    def test_shows_voted_status(self, mock_vote_count, sample_poll):
+    def test_shows_voted_status(self, mock_vote_count, sample_poll) -> None:
         """Test that voted pictures show voted status."""
         mock_vote_count.return_value = 1
 
@@ -138,7 +138,7 @@ class TestBuildPicturesModal:
         assert any("You voted" in str(b) for b in context_blocks)
 
     @patch("app.listeners.actions.view_pictures.get_picture_vote_count")
-    def test_user_not_found(self, mock_vote_count):
+    def test_user_not_found(self, mock_vote_count) -> None:
         """Test handling when user not in poll."""
         poll = {"users": {}}
 

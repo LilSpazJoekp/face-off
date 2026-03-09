@@ -1,6 +1,10 @@
 """View handler for the channel selection modal."""
 
 import logging
+from typing import Any
+
+from slack_bolt import Ack
+from slack_sdk import WebClient
 
 from ...app import app
 from ...storage import set_notification_channel
@@ -10,7 +14,9 @@ log = logging.getLogger(__name__)
 
 
 @app.view("channel_modal_submit")
-def channel_modal_callback(ack, body, client, view):
+def channel_modal_callback(
+    ack: Ack, body: dict[str, Any], client: WebClient, view: dict[str, Any]
+) -> None:
     """Handle the channel modal submission."""
     ack()
 

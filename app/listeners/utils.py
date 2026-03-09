@@ -10,7 +10,7 @@ class plural:  # noqa: N801
             return f"{self.markdown_char}{v}{self.markdown_char} {plural_form}"
         return f"{self.markdown_char}{v}{self.markdown_char} {singular_form}"
 
-    def __init__(self, value: int, markdown_char: str = ""):
+    def __init__(self, value: int, markdown_char: str = "") -> None:
         """Initialize the class with a number."""
         self.value: int = value
         self.markdown_char: str = markdown_char

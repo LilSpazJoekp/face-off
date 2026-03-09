@@ -4,6 +4,9 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+from slack_bolt import Ack
+from slack_sdk import WebClient
+
 from ...app import app
 from ...storage import end_poll, get_poll
 
@@ -18,7 +21,7 @@ def _value(record: Any, key: str) -> Any:
 
 
 @app.action("end_poll")
-def end_poll_callback(ack, body, client):
+def end_poll_callback(ack: Ack, body: dict[str, Any], client: WebClient) -> None:
     """End a poll and update the summary message."""
     # Import here to avoid circular import
     from ...scheduler import build_summary_blocks, update_poll_user_messages
@@ -56,5 +59,5 @@ def end_poll_callback(ack, body, client):
                 text="Poll Results (Ended)",
                 blocks=blocks,
             )
-        except Exception as e:
-            log.error(f"Error updating poll summary after ending: {e}")
+        except Exception:
+            log.exception("Error updating poll summary after ending")

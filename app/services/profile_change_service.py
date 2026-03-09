@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytz
+from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 from ..database import get_db
@@ -41,7 +42,8 @@ class ProfileChangeService:
         start = ProfileChangeService._coerce_datetime(change.get("timestamp"))
         end = ProfileChangeService._coerce_datetime(change.get("ended_at"))
         if start is None:
-            raise ValueError("Change timestamp is required")
+            msg = "Change timestamp is required"
+            raise ValueError(msg)
         return start, end
 
     @staticmethod
@@ -104,7 +106,8 @@ class ProfileChangeService:
     def get_change_duration(change: ProfileChange | Mapping[str, Any]) -> str:
         """Calculate and format the duration a profile picture was used.
 
-        :param change: ProfileChange model instance or mapping containing timestamp fields.
+        :param change: ProfileChange model instance or mapping containing timestamp
+            fields.
 
         :returns: Formatted duration string (e.g., "2d 5h" or "45m").
 
@@ -245,13 +248,14 @@ class ProfileChangeService:
         return True
 
     @staticmethod
-    def process_user_change(user: dict, client) -> str | None:
+    def process_user_change(user: dict[str, Any], client: WebClient) -> str | None:
         """Process a user profile change and notify the channel.
 
         :param user: The Slack user object.
         :param client: The Slack WebClient.
 
-        :returns: The change_id if a new change was recorded and notified, None otherwise.
+        :returns: The change_id if a new change was recorded and notified, None
+            otherwise.
 
         """
         user_id = user.get("id")
@@ -272,8 +276,8 @@ class ProfileChangeService:
         # Make sure we're in the notification channel
         try:
             client.conversations_join(channel=notification_channel)
-        except SlackApiError as e:
-            log.error(f"Failed to join notification channel: {e}")
+        except SlackApiError:
+            log.exception("Failed to join notification channel")
             return None
 
         profile = user.get("profile", {})
@@ -337,7 +341,10 @@ class ProfileChangeService:
                     },
                 ],
             )
-
+        except Exception:
+            log.exception("Error sending notification")
+            return None
+        else:
             # Save notification message ts for later updates
             ProfileChangeService.save_notification_ts(
                 change_id, notification_channel, result["ts"]
@@ -345,9 +352,6 @@ class ProfileChangeService:
 
             log.info(f"Notification sent to {notification_channel}")
             return change_id
-        except Exception as e:
-            log.error(f"Error sending notification: {e}")
-            return None
 
     @staticmethod
     def save_notification_ts(change_id: str, channel: str, message_ts: str) -> bool:

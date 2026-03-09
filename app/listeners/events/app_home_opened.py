@@ -1,18 +1,18 @@
-from logging import Logger
 from collections.abc import Mapping
+from logging import Logger
 
 from slack_sdk import WebClient
 
 from ...app import app
 from ...storage import (
-    get_watched_users,
-    is_user_watched,
-    is_consent_pending,
-    get_pending_consent,
     get_notification_channel,
+    get_pending_consent,
     get_poll_day,
-    get_poll_hour,
     get_poll_duration_hours,
+    get_poll_hour,
+    get_watched_users,
+    is_consent_pending,
+    is_user_watched,
 )
 
 log = Logger(__name__)
@@ -307,7 +307,7 @@ def build_home_view(user_id: str) -> dict:
 
 
 @app.event("app_home_opened")
-def app_home_opened_callback(client: WebClient, event: dict):
+def app_home_opened_callback(client: WebClient, event: dict) -> None:
     # ignore the app_home_opened event for anything but the Home tab
     if event["tab"] != "home":
         return
@@ -315,5 +315,5 @@ def app_home_opened_callback(client: WebClient, event: dict):
         user_id = event["user"]
         view = build_home_view(user_id)
         client.views_publish(user_id=user_id, view=view)
-    except Exception as e:
-        log.error(f"Error publishing home tab: {e}")
+    except Exception:
+        log.exception("Error publishing home tab")

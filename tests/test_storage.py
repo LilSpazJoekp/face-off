@@ -3,40 +3,41 @@
 import logging
 from datetime import datetime, timedelta
 
+from typing import Any
 
+from app.models import Poll, PollCandidate
 from app.storage import (
-    record_profile_change,
+    CT_TIMEZONE,
+    add_pending_consent,
+    add_watched_user,
+    create_poll,
     get_change_duration,
     get_changes_by_user,
-    create_poll,
-    record_vote,
-    remove_vote,
-    has_voted_for_picture,
-    get_picture_vote_count,
-    get_user_total_votes,
-    get_poll,
-    get_voter_votes,
-    get_voter_remaining_votes,
-    get_watched_users,
-    is_user_watched,
-    add_watched_user,
-    remove_watched_user,
-    add_pending_consent,
-    remove_pending_consent,
-    get_pending_consent,
-    is_consent_pending,
-    get_notification_channel,
-    set_notification_channel,
     get_max_votes,
+    get_notification_channel,
+    get_pending_consent,
+    get_picture_vote_count,
+    get_poll,
+    get_user_total_votes,
+    get_voter_remaining_votes,
+    get_voter_votes,
+    get_watched_users,
+    has_voted_for_picture,
+    is_consent_pending,
+    is_user_watched,
+    record_profile_change,
+    record_vote,
+    remove_pending_consent,
+    remove_vote,
+    remove_watched_user,
     set_max_votes,
-    CT_TIMEZONE,
+    set_notification_channel,
 )
-
 
 test_logger = logging.getLogger(__name__)
 
 
-def _get_candidate(poll, user_id: str):
+def _get_candidate(poll: Poll, user_id: str) -> PollCandidate:
     """Find a candidate by user_id from a Poll model."""
     return next(
         candidate for candidate in poll.candidates if candidate.user_id == user_id
@@ -44,7 +45,7 @@ def _get_candidate(poll, user_id: str):
 
 
 class TestRecordProfileChange:
-    def test_records_new_change(self):
+    def test_records_new_change(self) -> None:
         """Test recording a new profile change."""
         result = record_profile_change(
             "U123", "Test User", "https://example.com/avatar.jpg"
@@ -54,7 +55,7 @@ class TestRecordProfileChange:
         assert result is not None
         assert isinstance(result, str)
 
-    def test_detects_duplicate_avatar(self):
+    def test_detects_duplicate_avatar(self) -> None:
         """Test that duplicate avatars are detected."""
         # First call should succeed
         result1 = record_profile_change(
@@ -69,7 +70,7 @@ class TestRecordProfileChange:
         assert result1 is not None
         assert result2 is None
 
-    def test_different_avatars_recorded(self):
+    def test_different_avatars_recorded(self) -> None:
         """Test that different avatars are recorded."""
         result1 = record_profile_change(
             "U123", "Test User", "https://example.com/avatar1.jpg"
@@ -83,7 +84,7 @@ class TestRecordProfileChange:
 
 
 class TestGetChangeDuration:
-    def test_duration_days_hours(self):
+    def test_duration_days_hours(self) -> None:
         """Test duration formatting with days and hours."""
         now = datetime.now(CT_TIMEZONE)
         change = {
@@ -95,7 +96,7 @@ class TestGetChangeDuration:
         assert "2d" in result
         assert "h" in result
 
-    def test_duration_hours_minutes(self):
+    def test_duration_hours_minutes(self) -> None:
         """Test duration formatting with hours and minutes."""
         now = datetime.now(CT_TIMEZONE)
         change = {
@@ -107,7 +108,7 @@ class TestGetChangeDuration:
         assert "3h" in result
         assert "m" in result
 
-    def test_duration_minutes_only(self):
+    def test_duration_minutes_only(self) -> None:
         """Test duration formatting with minutes only."""
         now = datetime.now(CT_TIMEZONE)
         change = {
@@ -118,7 +119,7 @@ class TestGetChangeDuration:
         result = get_change_duration(change)
         assert "45m" in result
 
-    def test_duration_ongoing(self):
+    def test_duration_ongoing(self) -> None:
         """Test duration for ongoing change (no ended_at)."""
         now = datetime.now(CT_TIMEZONE)
         change = {
@@ -131,7 +132,7 @@ class TestGetChangeDuration:
 
 
 class TestGetChangesByUser:
-    def test_organizes_changes_by_user(self):
+    def test_organizes_changes_by_user(self) -> None:
         """Test that changes are organized by user."""
         record_profile_change("U123", "User One", "https://example.com/pic1.jpg")
         record_profile_change("U456", "User Two", "https://example.com/pic2.jpg")
@@ -145,7 +146,7 @@ class TestGetChangesByUser:
 
 
 class TestPollFunctions:
-    def test_create_poll(self):
+    def test_create_poll(self) -> None:
         """Test creating a poll."""
         users = {
             "U123": {
@@ -167,7 +168,7 @@ class TestPollFunctions:
         assert result.poll_id == "poll_123"
         assert any(candidate.user_id == "U123" for candidate in result.candidates)
 
-    def test_create_poll_with_pictures(self):
+    def test_create_poll_with_pictures(self) -> None:
         """Test creating a poll includes picture IDs."""
         users = {
             "U123": {
@@ -191,7 +192,7 @@ class TestPollFunctions:
         assert len(pictures) == 1
         assert pictures[0].id is not None
 
-    def test_record_vote(self):
+    def test_record_vote(self) -> None:
         """Test recording a vote for a picture."""
         users = {
             "U456": {
@@ -216,13 +217,13 @@ class TestPollFunctions:
         assert result is True
         assert get_picture_vote_count("poll_123", picture_id) == 1
 
-    def test_record_vote_poll_not_found(self):
+    def test_record_vote_poll_not_found(self) -> None:
         """Test recording vote when poll doesn't exist."""
         result = record_vote("nonexistent_poll", "U789", 999)
 
         assert result is False
 
-    def test_record_vote_respects_max_votes(self):
+    def test_record_vote_respects_max_votes(self) -> None:
         """Test that voting stops when max votes is reached."""
         users = {
             "U456": {
@@ -255,7 +256,7 @@ class TestPollFunctions:
         result = record_vote("poll_123", "voter1", pictures[3].id)
         assert result is False
 
-    def test_record_vote_same_picture_twice(self):
+    def test_record_vote_same_picture_twice(self) -> None:
         """Test that voting for the same picture twice fails."""
         users = {
             "U456": {
@@ -283,7 +284,7 @@ class TestPollFunctions:
         result2 = record_vote("poll_123", "voter1", picture_id)
         assert result2 is False
 
-    def test_remove_vote(self):
+    def test_remove_vote(self) -> None:
         """Test removing a vote."""
         users = {
             "U456": {
@@ -311,12 +312,12 @@ class TestPollFunctions:
         assert result is True
         assert get_picture_vote_count("poll_123", picture_id) == 0
 
-    def test_remove_vote_not_found(self):
+    def test_remove_vote_not_found(self) -> None:
         """Test removing a vote that doesn't exist."""
         result = remove_vote("poll_123", "voter1", 999)
         assert result is False
 
-    def test_has_voted_for_picture(self):
+    def test_has_voted_for_picture(self) -> None:
         """Test checking if voter voted for a picture."""
         users = {
             "U456": {
@@ -342,7 +343,7 @@ class TestPollFunctions:
 
         assert has_voted_for_picture("poll_123", "voter1", picture_id) is True
 
-    def test_get_poll(self):
+    def test_get_poll(self) -> None:
         """Test getting a poll."""
         users = {
             "U456": {
@@ -366,13 +367,13 @@ class TestPollFunctions:
         candidate = _get_candidate(result, "U456")
         assert candidate.pictures[0].id is not None
 
-    def test_get_poll_not_found(self):
+    def test_get_poll_not_found(self) -> None:
         """Test getting a poll that doesn't exist."""
         result = get_poll("nonexistent_poll")
 
         assert result is None
 
-    def test_get_voter_votes(self):
+    def test_get_voter_votes(self) -> None:
         """Test getting a voter's votes."""
         users = {
             "U456": {
@@ -402,7 +403,7 @@ class TestPollFunctions:
         assert pictures[2].id in result
         assert len(result) == 2
 
-    def test_get_voter_votes_no_votes(self):
+    def test_get_voter_votes_no_votes(self) -> None:
         """Test getting votes when voter hasn't voted."""
         users = {
             "U456": {
@@ -417,7 +418,7 @@ class TestPollFunctions:
 
         assert result == []
 
-    def test_get_voter_remaining_votes(self):
+    def test_get_voter_remaining_votes(self) -> None:
         """Test getting remaining votes for a voter."""
         users = {
             "U456": {
@@ -447,7 +448,7 @@ class TestPollFunctions:
         record_vote("poll_123", "voter1", pictures[1].id)
         assert get_voter_remaining_votes("poll_123", "voter1") == 1
 
-    def test_get_user_total_votes(self):
+    def test_get_user_total_votes(self) -> None:
         """Test getting total votes for a user's pictures."""
         users = {
             "U456": {
@@ -479,13 +480,13 @@ class TestPollFunctions:
 
 
 class TestWatchedUsers:
-    def test_get_watched_users_empty(self):
+    def test_get_watched_users_empty(self) -> None:
         """Test getting watched users when empty."""
         result = get_watched_users()
 
         assert result == []
 
-    def test_add_and_get_watched_users(self):
+    def test_add_and_get_watched_users(self) -> None:
         """Test adding and getting watched users."""
         add_watched_user("U123")
         add_watched_user("U456")
@@ -495,7 +496,7 @@ class TestWatchedUsers:
         assert "U123" in result
         assert "U456" in result
 
-    def test_is_user_watched_true(self):
+    def test_is_user_watched_true(self) -> None:
         """Test checking if user is watched (true case)."""
         add_watched_user("U123")
 
@@ -503,20 +504,20 @@ class TestWatchedUsers:
 
         assert result is True
 
-    def test_is_user_watched_false(self):
+    def test_is_user_watched_false(self) -> None:
         """Test checking if user is watched (false case)."""
         result = is_user_watched("U123")
 
         assert result is False
 
-    def test_add_watched_user_new(self):
+    def test_add_watched_user_new(self) -> None:
         """Test adding a new watched user."""
         result = add_watched_user("U123")
 
         assert result is True
         assert is_user_watched("U123")
 
-    def test_add_watched_user_already_exists(self):
+    def test_add_watched_user_already_exists(self) -> None:
         """Test adding a user who is already watched."""
         add_watched_user("U123")
 
@@ -524,7 +525,7 @@ class TestWatchedUsers:
 
         assert result is False
 
-    def test_remove_watched_user_exists(self):
+    def test_remove_watched_user_exists(self) -> None:
         """Test removing a watched user."""
         add_watched_user("U123")
 
@@ -533,7 +534,7 @@ class TestWatchedUsers:
         assert result is True
         assert not is_user_watched("U123")
 
-    def test_remove_watched_user_not_found(self):
+    def test_remove_watched_user_not_found(self) -> None:
         """Test removing a user who is not watched."""
         result = remove_watched_user("U123")
 
@@ -541,14 +542,14 @@ class TestWatchedUsers:
 
 
 class TestPendingConsent:
-    def test_add_pending_consent(self):
+    def test_add_pending_consent(self) -> None:
         """Test adding pending consent."""
         result = add_pending_consent("U123", "U789")
 
         assert result is True
         assert is_consent_pending("U123")
 
-    def test_add_pending_consent_already_watched(self):
+    def test_add_pending_consent_already_watched(self) -> None:
         """Test adding consent for already watched user."""
         add_watched_user("U123")
 
@@ -556,7 +557,7 @@ class TestPendingConsent:
 
         assert result is False
 
-    def test_add_pending_consent_already_pending(self):
+    def test_add_pending_consent_already_pending(self) -> None:
         """Test adding consent when already pending."""
         add_pending_consent("U123", "U789")
 
@@ -564,7 +565,7 @@ class TestPendingConsent:
 
         assert result is False
 
-    def test_get_pending_consent(self):
+    def test_get_pending_consent(self) -> None:
         """Test getting pending consent."""
         add_pending_consent("U123", "U789")
 
@@ -573,13 +574,13 @@ class TestPendingConsent:
         assert result.user_id == "U123"
         assert result.requested_by == "U789"
 
-    def test_get_pending_consent_not_found(self):
+    def test_get_pending_consent_not_found(self) -> None:
         """Test getting pending consent when not found."""
         result = get_pending_consent("U123")
 
         assert result is None
 
-    def test_is_consent_pending_true(self):
+    def test_is_consent_pending_true(self) -> None:
         """Test checking if consent is pending (true case)."""
         add_pending_consent("U123", "U789")
 
@@ -587,13 +588,13 @@ class TestPendingConsent:
 
         assert result is True
 
-    def test_is_consent_pending_false(self):
+    def test_is_consent_pending_false(self) -> None:
         """Test checking if consent is pending (false case)."""
         result = is_consent_pending("U123")
 
         assert result is False
 
-    def test_remove_pending_consent(self):
+    def test_remove_pending_consent(self) -> None:
         """Test removing pending consent."""
         add_pending_consent("U123", "U789")
 
@@ -602,7 +603,7 @@ class TestPendingConsent:
         assert result is True
         assert not is_consent_pending("U123")
 
-    def test_add_watched_user_removes_pending_consent(self):
+    def test_add_watched_user_removes_pending_consent(self) -> None:
         """Test that adding a watched user removes pending consent."""
         add_pending_consent("U123", "U789")
         assert is_consent_pending("U123")
@@ -613,13 +614,13 @@ class TestPendingConsent:
 
 
 class TestNotificationChannel:
-    def test_get_notification_channel_not_set(self):
+    def test_get_notification_channel_not_set(self) -> None:
         """Test getting channel when not configured."""
         result = get_notification_channel()
 
         assert result is None
 
-    def test_set_and_get_notification_channel(self):
+    def test_set_and_get_notification_channel(self) -> None:
         """Test setting and getting the notification channel."""
         set_notification_channel("C123")
 
@@ -627,7 +628,7 @@ class TestNotificationChannel:
 
         assert result == "C123"
 
-    def test_update_notification_channel(self):
+    def test_update_notification_channel(self) -> None:
         """Test updating the notification channel."""
         set_notification_channel("C123")
         set_notification_channel("C456")
@@ -638,13 +639,13 @@ class TestNotificationChannel:
 
 
 class TestMaxVotes:
-    def test_get_max_votes_default(self):
+    def test_get_max_votes_default(self) -> None:
         """Test getting max votes returns default when not set."""
         result = get_max_votes()
 
         assert result == 3
 
-    def test_set_and_get_max_votes(self):
+    def test_set_and_get_max_votes(self) -> None:
         """Test setting and getting max votes."""
         set_max_votes(5)
 
@@ -652,7 +653,7 @@ class TestMaxVotes:
 
         assert result == 5
 
-    def test_update_max_votes(self):
+    def test_update_max_votes(self) -> None:
         """Test updating max votes."""
         set_max_votes(3)
         set_max_votes(10)

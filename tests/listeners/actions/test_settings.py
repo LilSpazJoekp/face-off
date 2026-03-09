@@ -18,7 +18,7 @@ class TestOpenChannelModal:
     @patch("app.listeners.actions.settings.get_notification_channel")
     def test_opens_modal_with_current_channel(
         self, mock_get_channel, mock_ack, mock_client, trigger_body
-    ):
+    ) -> None:
         """Test that the channel modal opens with current channel selected."""
         mock_get_channel.return_value = "C123"
 
@@ -39,7 +39,7 @@ class TestOpenChannelModal:
     @patch("app.listeners.actions.settings.get_notification_channel")
     def test_opens_modal_without_current_channel(
         self, mock_get_channel, mock_ack, mock_client, trigger_body
-    ):
+    ) -> None:
         """Test that the channel modal opens when no channel is configured."""
         mock_get_channel.return_value = None
 

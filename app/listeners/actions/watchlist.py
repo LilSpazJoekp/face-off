@@ -1,6 +1,10 @@
 """Actions for managing the watched users list."""
 
 import logging
+from typing import Any
+
+from slack_bolt import Ack
+from slack_sdk import WebClient
 
 from ...app import app
 from ...storage import remove_watched_user
@@ -10,7 +14,9 @@ log = logging.getLogger(__name__)
 
 
 @app.action("open_add_user_modal")
-def open_add_user_modal_callback(ack, body, client):
+def open_add_user_modal_callback(
+    ack: Ack, body: dict[str, Any], client: WebClient
+) -> None:
     """Open the modal to add a user to the watch list."""
     ack()
 
@@ -46,7 +52,9 @@ def open_add_user_modal_callback(ack, body, client):
 
 
 @app.action("remove_watched_user")
-def remove_watched_user_callback(ack, body, client):
+def remove_watched_user_callback(
+    ack: Ack, body: dict[str, Any], client: WebClient
+) -> None:
     """Remove a user from the watch list."""
     ack()
 
@@ -65,7 +73,9 @@ def remove_watched_user_callback(ack, body, client):
 
 
 @app.action("remove_self_from_watchlist")
-def remove_self_from_watchlist_callback(ack, body, client):
+def remove_self_from_watchlist_callback(
+    ack: Ack, body: dict[str, Any], client: WebClient
+) -> None:
     """Allow a user to remove themselves from the watch list."""
     ack()
 

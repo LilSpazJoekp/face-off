@@ -1,16 +1,20 @@
 """Database session management for PostgreSQL."""
 
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator
+from typing import Any
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import Engine, create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from .models import Base  # noqa
 
-_engine = None
-_SessionLocal = None
+# Storage for singleton database components
+_db_state: dict[str, Any] = {
+    "engine": None,
+    "session_factory": None,
+}
 
 
 def get_database_url() -> str:
@@ -18,17 +22,16 @@ def get_database_url() -> str:
     return os.environ.get("DATABASE_URL", "sqlite:///pfp_tracker.db")
 
 
-def get_engine():
+def get_engine() -> Engine:
     """Get or create the database engine."""
-    global _engine
-    if _engine is None:
+    if _db_state["engine"] is None:
         database_url = get_database_url()
-        _engine = create_engine(database_url, pool_pre_ping=True)
-    return _engine
+        _db_state["engine"] = create_engine(database_url, pool_pre_ping=True)
+    return _db_state["engine"]
 
 
 @contextmanager
-def get_db() -> Generator[Session, None, None]:
+def get_db() -> Generator[Session]:
     """Context manager for database sessions.
 
     Usage:
@@ -36,11 +39,12 @@ def get_db() -> Generator[Session, None, None]:
             db.query(Model).all()
 
     """
-    global _SessionLocal
-    if _SessionLocal is None:
+    if _db_state["session_factory"] is None:
         # Keep loaded attributes available after session close for detached return objects.
-        _SessionLocal = sessionmaker(bind=get_engine(), expire_on_commit=False)
-    session = _SessionLocal()
+        _db_state["session_factory"] = sessionmaker(
+            bind=get_engine(), expire_on_commit=False
+        )
+    session = _db_state["session_factory"]()
     session.expire_on_commit = False
     try:
         yield session
@@ -52,10 +56,11 @@ def get_db() -> Generator[Session, None, None]:
         session.close()
 
 
-def run_migrations():
+def run_migrations() -> None:
     """Run Alembic migrations to bring the database up to date."""
-    from alembic import command
     from alembic.config import Config
+
+    from alembic import command
 
     alembic_cfg = Config("alembic.ini")
     alembic_cfg.attributes["configure_logger"] = False
@@ -63,10 +68,9 @@ def run_migrations():
     command.upgrade(alembic_cfg, "head")
 
 
-def reset_engine():
+def reset_engine() -> None:
     """Reset the engine and session factory. Useful for testing."""
-    global _engine, _SessionLocal
-    if _engine:
-        _engine.dispose()
-    _engine = None
-    _SessionLocal = None
+    if _db_state["engine"]:
+        _db_state["engine"].dispose()
+    _db_state["engine"] = None
+    _db_state["session_factory"] = None

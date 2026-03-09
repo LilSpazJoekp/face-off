@@ -1,13 +1,14 @@
 """Command to show watched users."""
 
+from slack_bolt import Ack, Respond
+
 from ...app import app
 from ...storage import get_watched_users
-
 
 app.command("/watched-users")
 
 
-def watched_users_callback(ack, respond, client):
+def watched_users_callback(ack: Ack, respond: Respond) -> None:
     """Show the list of watched users."""
     ack()
 

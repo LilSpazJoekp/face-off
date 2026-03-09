@@ -1,16 +1,26 @@
 """View handler for the poll schedule modal."""
 
 import logging
+from typing import Any
+
+from slack_bolt import Ack
+from slack_sdk import WebClient
 
 from ...app import app
-from ...storage import set_poll_day, set_poll_hour, set_poll_duration_hours
+from ...storage import set_poll_day, set_poll_duration_hours, set_poll_hour
 from ..events.app_home_opened import build_home_view
 
 log = logging.getLogger(__name__)
 
 
 @app.view("poll_schedule_modal_submit")
-def poll_schedule_modal_callback(ack, body, client, view, context):
+def poll_schedule_modal_callback(
+    ack: Ack,
+    body: dict[str, Any],
+    client: WebClient,
+    view: dict[str, Any],
+    context: dict[str, Any],
+) -> None:
     """Handle the poll schedule modal submission."""
     # Import here to avoid circular import
     from ...scheduler import reschedule_poll
