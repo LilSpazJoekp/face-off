@@ -1,16 +1,21 @@
 """Service for managing profile picture changes."""
 
+import logging
 import uuid
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytz
+from slack_sdk.errors import SlackApiError
 
 from ..database import get_db
 from ..models import ProfileChange
+from .settings_service import SettingsService
+from .user_watchlist_service import UserWatchlistService
 
 CT_TIMEZONE = pytz.timezone("America/Chicago")
+log = logging.getLogger(__name__)
 
 
 class ProfileChangeService:
@@ -238,6 +243,111 @@ class ProfileChangeService:
                 change.description_edited_at = None
 
         return True
+
+    @staticmethod
+    def process_user_change(user: dict, client) -> str | None:
+        """Process a user profile change and notify the channel.
+
+        :param user: The Slack user object.
+        :param client: The Slack WebClient.
+
+        :returns: The change_id if a new change was recorded and notified, None otherwise.
+
+        """
+        user_id = user.get("id")
+        if not user_id:
+            return None
+
+        # Check if user is watched
+        if not UserWatchlistService.is_user_watched(user_id):
+            log.debug(f"Ignoring user {user_id} - not in watched list")
+            return None
+
+        # Get notification channel
+        notification_channel = SettingsService.get_notification_channel()
+        if not notification_channel:
+            log.warning("No notification channel configured, skipping notification")
+            return None
+
+        # Make sure we're in the notification channel
+        try:
+            client.conversations_join(channel=notification_channel)
+        except SlackApiError as e:
+            log.error(f"Failed to join notification channel: {e}")
+            return None
+
+        profile = user.get("profile", {})
+        new_avatar = profile.get("image_original") or profile.get("image_512")
+        display_name = (
+            profile.get("display_name")
+            or profile.get("real_name")
+            or user.get("name")
+            or user_id
+        )
+
+        if not new_avatar:
+            return None
+
+        # Record the change
+        change_id = ProfileChangeService.record_change(
+            user_id, display_name, new_avatar
+        )
+
+        if not change_id:
+            log.debug(f"Duplicate avatar detected for {display_name}, skipping")
+            return None
+
+        log.info(f"Profile picture change detected for {display_name}")
+
+        # Send notification to the channel
+        try:
+            result = client.chat_postMessage(
+                channel=notification_channel,
+                text=f"{display_name} changed their profile picture!",
+                blocks=[
+                    {
+                        "type": "context",
+                        "elements": [{"type": "mrkdwn", "text": "New Profile Picture"}],
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"<@{user_id}> just updated their look!",
+                        },
+                    },
+                    {
+                        "type": "image",
+                        "image_url": new_avatar,
+                        "alt_text": f"{display_name}'s new profile picture",
+                    },
+                    {
+                        "type": "actions",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Add Description",
+                                },
+                                "action_id": "edit_change_description",
+                                "value": change_id,
+                            }
+                        ],
+                    },
+                ],
+            )
+
+            # Save notification message ts for later updates
+            ProfileChangeService.save_notification_ts(
+                change_id, notification_channel, result["ts"]
+            )
+
+            log.info(f"Notification sent to {notification_channel}")
+            return change_id
+        except Exception as e:
+            log.error(f"Error sending notification: {e}")
+            return None
 
     @staticmethod
     def save_notification_ts(change_id: str, channel: str, message_ts: str) -> bool:

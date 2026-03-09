@@ -26,6 +26,12 @@
               "command": "/watched-users",
               "description": "Show users being watched for profile picture changes",
               "should_escape": false
+          },
+          {
+              "command": "/manual-user-update",
+              "description": "Manually trigger a profile picture update for a user",
+              "usage_hint": "[@user]",
+              "should_escape": false
           }
       ]
   },
